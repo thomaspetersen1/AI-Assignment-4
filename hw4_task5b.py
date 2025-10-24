@@ -29,6 +29,10 @@ auc_base_per = []
 acc_yours_per = []
 auc_yours_per = []
 
+# hyper parameter for the class_weights of the minority(positive) and find optimal
+bonus_weights = [1, 2, 5, 10, 20]
+auc_bonus_weights = []
+
 for per in num_train_per: 
 
     # create training data and label
@@ -88,6 +92,14 @@ for per in num_train_per:
     auc_yours = roc_auc_score(label_test, pred_proba)
     auc_yours_per.append(auc_yours)
     # --- end of task --- #
+
+for w in bonus_weights:
+    # for the minority try the regression model with each weight to balance it
+    model = LogisticRegression(class_weight={0:1, 1:w}) 
+    model.fit(sample_train, label_train)
+    pred_proba_bonus = model.predict_proba(sample_test)[:, 1]
+    auc_score = roc_auc_score(label_test, pred_proba_bonus)
+    auc_bonus_weights.append(auc_score)
     
 
 plt.figure()    
@@ -96,8 +108,6 @@ plt.plot(num_train_per,acc_yours_per, label='Your Accuracy')
 plt.xlabel('Percentage of Training Data')
 plt.ylabel('Classification Accuracy')
 plt.legend()
-plt.title("Figure 4: Accuracy vs Training Data Size")
-plt.show()
 
 
 plt.figure()
@@ -106,7 +116,12 @@ plt.plot(num_train_per,auc_yours_per, label='Your AUC Score')
 plt.xlabel('Percentage of Training Data')
 plt.ylabel('Classification AUC Score')
 plt.legend()
-plt.title("Figure 5: AUC Score vs Training Data Size")
+
+plt.figure()
+plt.plot(bonus_weights, auc_bonus_weights, marker='o')
+plt.xlabel('Minority Class Weight')
+plt.ylabel('Classification AUC Score')
+plt.title('Figure 6: Effect of Minority Class Weight on AUC')
 plt.show()
     
 
